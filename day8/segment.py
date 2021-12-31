@@ -1,7 +1,10 @@
 #!/usr/bin/python
 
 from dataclasses import dataclass
-from typing import Set, Tuple, List
+from typing import Dict, Set, Tuple, List, Optional, Union
+from pprint import PrettyPrinter
+
+pp = PrettyPrinter()
 
 
 class Color:
@@ -76,26 +79,34 @@ class Puzzle:
 
 SEGMENTS = [
     # 0 ... length 6
-    "abcefg",
+    set("abcefg"),
     # 1 ... length 2 (unique)
-    "cf",
+    set("cf"),
     # 2 ... length 5
-    "acdeg",
+    set("acdeg"),
     # 3 ... length 5
-    "acdfg",
+    set("acdfg"),
     # 4 ... length 4 (unique)
-    "bcdf",
+    set("bcdf"),
     # 5 ... length 5
-    "abdfg",
+    set("abdfg"),
     # 6 ... length 6
-    "abdefg",
+    set("abdefg"),
     # 7 ... length 3 (unique)
-    "acf",
+    set("acf"),
     # 8 ... length 7 (unique)
-    "abcdefg",
+    set("abcdefg"),
     # 9 ... length 6
-    "abcdfg",
+    set("abcdfg"),
 ]
+
+# Map unique lengths to their corresponding semgnets (will be handy!)
+UNIQUE = {
+    2: SEGMENTS[1],
+    3: SEGMENTS[7],
+    4: SEGMENTS[4],
+    7: SEGMENTS[8],
+}
 
 
 def read(mini: bool) -> List[Puzzle]:
@@ -141,19 +152,51 @@ def solve(mini: bool) -> Tuple[int, int]:
     """
     segments = read(mini)
 
+    # problem 1; simply count the outputs that possess a unique length (1, 3, 4, and 7)
     count = 0
-
     for segment in segments:
         outputs = segment.outputs
 
-        for output in outputs:
-            if (
-                output.size() == 2
-                or output.size() == 4
-                or output.size() == 3
-                or output.size() == 7
-            ):
+        for o in outputs:
+            s = o.size()
+            if s == 2 or s == 4 or s == 3 or s == 7:
                 count = count + 1
+
+    # problem 2; now determine the full output
+    s_sum = 0
+    for segment in segments:
+        s_map: Dict[str, Optional[Union[int, Set[int]]]] = {
+            "a": None,
+            "b": None,
+            "c": None,
+            "d": None,
+            "e": None,
+            "f": None,
+            "g": None,
+        }
+
+        inputs = segment.inputs
+        outputs = segment.outputs
+
+        ios = inputs.copy()
+        ios.extend(outputs)
+
+        # TODO: perform "process of elimination"
+        #       logic here is currently backwards...
+        for io in ios:
+            s = io.size()
+            if s in UNIQUE.keys():
+                t = UNIQUE[s]
+                for w in io.wires:
+                    if s_map[w] is None:
+                        s_map[w] = t
+                    if len(s_map[w]) > 1:
+                        s_map[w] = t.intersection(s_map[w])
+                    if len(s_map[w]) == 1:
+                        # Convert to single character
+                        s_map[w] = "".join(s_map[w])
+
+        pp.pprint(s_map)
 
     answer1 = count
     answer2 = -1
@@ -162,7 +205,7 @@ def solve(mini: bool) -> Tuple[int, int]:
 
 
 if __name__ == "__main__":
-    mini: bool = False
+    mini: bool = True
 
     answer1, answer2 = solve(mini)
 
