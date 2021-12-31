@@ -1,7 +1,6 @@
 #!/usr/bin/python
 
 from typing import Tuple, List
-from math import ceil
 
 
 def read(mini: bool) -> List[int]:
